@@ -1,0 +1,17 @@
+CREATE TABLE IF NOT EXISTS settings (k TEXT PRIMARY KEY, v TEXT NOT NULL);
+CREATE TABLE IF NOT EXISTS rate (key TEXT NOT NULL, win INTEGER NOT NULL, n INTEGER NOT NULL, exp INTEGER NOT NULL, PRIMARY KEY (key, win));
+CREATE TABLE IF NOT EXISTS events (id TEXT PRIMARY KEY, created_at INTEGER NOT NULL);
+CREATE TABLE IF NOT EXISTS orders (
+  id TEXT PRIMARY KEY, reference TEXT NOT NULL UNIQUE, name TEXT NOT NULL, email TEXT NOT NULL,
+  items TEXT NOT NULL, usd_cents INTEGER NOT NULL, ngn_kobo INTEGER NOT NULL, fx_rate REAL NOT NULL, fx_asof TEXT,
+  display_currency TEXT, status TEXT NOT NULL, notes TEXT, paystack_id TEXT, created_at INTEGER NOT NULL, paid_at INTEGER
+);
+CREATE INDEX IF NOT EXISTS orders_created ON orders(created_at);
+CREATE TABLE IF NOT EXISTS conversations (
+  id TEXT PRIMARY KEY, token_hash TEXT NOT NULL, name TEXT NOT NULL, email TEXT NOT NULL, status TEXT NOT NULL,
+  admin_unread INTEGER NOT NULL DEFAULT 1, last_sender TEXT NOT NULL, last_msg_at INTEGER NOT NULL, created_at INTEGER NOT NULL
+);
+CREATE TABLE IF NOT EXISTS messages (
+  id INTEGER PRIMARY KEY AUTOINCREMENT, conv_id TEXT NOT NULL, sender TEXT NOT NULL, body TEXT NOT NULL, created_at INTEGER NOT NULL
+);
+CREATE INDEX IF NOT EXISTS messages_conv ON messages(conv_id, id);
