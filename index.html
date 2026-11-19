@@ -535,9 +535,9 @@ list.forEach(function(n){var o=orig.get(n);n.nodeValue=(cur==='USD'||!rates)?o:o
 function fetchJSON(u){var c=window.AbortController?new AbortController():null,t=c?setTimeout(function(){c.abort()},8000):null;
 return fetch(u,c?{signal:c.signal}:{}).then(function(r){clearTimeout(t);if(!r.ok)throw new Error('http');return r.json()},function(e){clearTimeout(t);throw e})}
 function fetchRates(){
-return fetchJSON('https://open.er-api.com/v6/latest/USD').then(function(d){if(d.result!=='success')throw new Error('bad');var x=d.rates;return{NGN:x.NGN,GBP:x.GBP,EUR:x.EUR,CAD:x.CAD,at:Date.now(),src:'ExchangeRate-API'}})
+return fetchJSON('https://open.er-api.com/v6/latest/USD').then(function(d){if(d.result!=='success')throw new Error('bad');var x=d.rates,o={NGN:x.NGN,GBP:x.GBP,EUR:x.EUR,CAD:x.CAD,at:Date.now(),src:'ExchangeRate-API'};if(!valid(o))throw new Error('range');return o})
 .catch(function(){return fetchJSON('https://cdn.jsdelivr.net/npm/@fawazahmed0/currency-api@latest/v1/currencies/usd.json').then(function(d){var x=d.usd;return{NGN:x.ngn,GBP:x.gbp,EUR:x.eur,CAD:x.cad,at:Date.now(),src:'currency-api'}})})}
-function refresh(){if(pending)return pending;pending=fetchRates().then(function(r){if(!valid(r))throw new Error('range');rates=r;lsSet(RK,JSON.stringify(r));pending=null;return true},function(){pending=null;return false});return pending}
+function refresh(){if(pending)return pending;pending=fetchRates().then(function(r){if(!valid(r))throw new Error('range');rates=r;lsSet(RK,JSON.stringify(r));pending=null;return true}).catch(function(){pending=null;return false});return pending}
 function sync(){[].forEach.call(document.querySelectorAll('.cursel'),function(s){s.value=cur})}
 function cartData(){try{return JSON.parse(lsGet(CART)||'[]')}catch(e){return[]}}
 function all(){apply();cartUI(cartData())}
