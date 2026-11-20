@@ -1,0 +1,26 @@
+/api/*
+  Cache-Control: no-store
+/admin
+  X-Frame-Options: DENY
+  X-Robots-Tag: noindex, nofollow
+  Cache-Control: no-store
+/admin.html
+  X-Frame-Options: DENY
+  X-Robots-Tag: noindex, nofollow
+  Cache-Control: no-store
+/order
+  X-Robots-Tag: noindex
+  Referrer-Policy: no-referrer
+  Cache-Control: no-store
+/order.html
+  X-Robots-Tag: noindex
+  Referrer-Policy: no-referrer
+  Cache-Control: no-store
+/
+  Cache-Control: no-cache
+/index.html
+  Cache-Control: no-cache
+/*.mp4
+  Cache-Control: public, max-age=604800
+/*.jpg
+  Cache-Control: public, max-age=604800
