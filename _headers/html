@@ -24,3 +24,14 @@
   Cache-Control: public, max-age=604800
 /*.jpg
   Cache-Control: public, max-age=604800
+/vault
+  X-Frame-Options: DENY
+  X-Robots-Tag: noindex, nofollow
+  Referrer-Policy: no-referrer
+  Cache-Control: no-store
+/vault.html
+  X-Frame-Options: DENY
+  X-Robots-Tag: noindex, nofollow
+  Referrer-Policy: no-referrer
+  Cache-Control: no-store
+
