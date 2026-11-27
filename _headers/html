@@ -34,4 +34,13 @@
   X-Robots-Tag: noindex, nofollow
   Referrer-Policy: no-referrer
   Cache-Control: no-store
-
+/world-50m.json
+  Cache-Control: public, max-age=2592000
+/d3.min.js
+  Cache-Control: public, max-age=2592000
+/topojson-client.min.js
+  Cache-Control: public, max-age=2592000
+/map
+  Cache-Control: no-cache
+/map.html
+  Cache-Control: no-cache
