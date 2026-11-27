@@ -905,11 +905,13 @@ async function vaultMe({ request, env }) {
     books.push({ id: i.id, title: b?.title || i.title, author: b?.author || '', cover: b?.cover || '', ready: !!b });
   }
   const prompts = items.filter((x) => x.kind !== 'book');
-  let member = null, creator = null;
+  let member = null, creator = null, signature = null;
   try {
     const idr = await env.DB.prepare('SELECT code,founding FROM ibj_ids WHERE customer_id=?').bind(c.id).first();
     const pr = await env.DB.prepare('SELECT display_name,level FROM member_profiles WHERE customer_id=?').bind(c.id).first();
     if (idr) member = { code: idr.code, founding: !!idr.founding, name: pr?.display_name || '', level: pr?.level || 'classic' };
+    const sg = await env.DB.prepare('SELECT alias,country,city,hidden FROM map_signatures WHERE customer_id=?').bind(c.id).first();
+    signature = sg ? { alias: sg.alias, country: sg.country, city: sg.city || '', hidden: !!sg.hidden } : null;
     const cr = await env.DB.prepare('SELECT status FROM creators WHERE customer_id=?').bind(c.id).first();
     creator = { approved: !!cr && cr.status === 'approved' };
     if (prompts.length) {
@@ -919,7 +921,7 @@ async function vaultMe({ request, env }) {
       prompts.forEach((p) => { p.ai = m.get(p.id) || 0; });
     }
   } catch (e) { /* new tables not created yet: the vault still works */ }
-  return json({ email: c.email, prompts, books, purchases, member, creator });
+  return json({ email: c.email, prompts, books, purchases, member, creator, signature });
 }
 async function vaultPrompt({ request, env }, url) {
   const c = await vaultCustomer(request, env);
@@ -986,9 +988,11 @@ async function adminBooks({ request, env }) {
   if (!title) return json({ error: 'A title is required.' }, 400);
   let pdf = b.pdf_b64 ? String(b.pdf_b64) : null;
   if (pdf && (pdf.length > 1900000 || !/^[A-Za-z0-9+/=]+$/.test(pdf))) return json({ error: 'The PDF is too large (limit about 1.4 MB) or invalid.' }, 400);
+  let cover = clean(b.cover, 200);
+  if (!cover && (await env.DB.prepare('SELECT 1 AS x FROM site_images WHERE id=?').bind('book-' + b.id).first())) cover = '/api/img?id=book-' + b.id;
   const prev = await env.DB.prepare('SELECT pdf_b64 FROM books WHERE product_id=?').bind(b.id).first();
   if (!pdf && prev) pdf = prev.pdf_b64;
-  await env.DB.prepare('INSERT INTO books(product_id,title,author,blurb,cover,body,pdf_b64,updated_at) VALUES(?,?,?,?,?,?,?,?) ON CONFLICT(product_id) DO UPDATE SET title=excluded.title,author=excluded.author,blurb=excluded.blurb,cover=excluded.cover,body=excluded.body,pdf_b64=excluded.pdf_b64,updated_at=excluded.updated_at').bind(b.id, title, clean(b.author, 120), clean(b.blurb, 3000), clean(b.cover, 200), body, pdf, Date.now()).run();
+  await env.DB.prepare('INSERT INTO books(product_id,title,author,blurb,cover,body,pdf_b64,updated_at) VALUES(?,?,?,?,?,?,?,?) ON CONFLICT(product_id) DO UPDATE SET title=excluded.title,author=excluded.author,blurb=excluded.blurb,cover=excluded.cover,body=excluded.body,pdf_b64=excluded.pdf_b64,updated_at=excluded.updated_at').bind(b.id, title, clean(b.author, 120), clean(b.blurb, 3000), cover, body, pdf, Date.now()).run();
   return json({ ok: true });
 }
 
@@ -1069,7 +1073,7 @@ async function adminCards({ request, env }) {
   const level = clean(b.level, 20).toLowerCase(), kind = clean(b.kind, 20);
   if (!/^[a-z]{3,20}$/.test(level) || !['standard', 'founding'].includes(kind)) return json({ error: 'Choose a level and a card kind.' }, 400);
   const path = clean(b.image_path, 120);
-  if (!/^\/?[A-Za-z0-9._\/-]{1,120}$/.test(path) || path.includes('..')) return json({ error: 'Image path looks wrong.' }, 400);
+  if (!(/^\/?[A-Za-z0-9._\/-]{1,120}$/.test(path) && !path.includes('..')) && !/^\/api\/img\?id=card-[a-z0-9-]{3,80}$/.test(path)) return json({ error: 'Image path looks wrong.' }, 400);
   let layout;
   try { layout = typeof b.layout === 'string' ? JSON.parse(b.layout) : b.layout; } catch { return json({ error: 'Layout is not valid JSON.' }, 400); }
   const okBox = (o) => o && ['x', 'y', 'size'].every((k) => typeof o[k] === 'number' && isFinite(o[k]));
@@ -1094,6 +1098,101 @@ async function adminMembers({ request, env }) {
   return json({ foundingUsed: used, foundingLimit: FOUNDING_LIMIT, members: rows });
 }
 
+// ---------- IBJers World Map ----------
+const MAP_COUNTRIES = new Set(["Afghanistan", "Albania", "Algeria", "American Samoa", "Andorra", "Angola", "Anguilla", "Antarctica", "Antigua and Barb.", "Argentina", "Armenia", "Aruba", "Ashmore and Cartier Is.", "Australia", "Austria", "Azerbaijan", "Bahamas", "Bahrain", "Bangladesh", "Barbados", "Belarus", "Belgium", "Belize", "Benin", "Bermuda", "Bhutan", "Bolivia", "Bosnia and Herz.", "Botswana", "Br. Indian Ocean Ter.", "Brazil", "British Virgin Is.", "Brunei", "Bulgaria", "Burkina Faso", "Burundi", "Cabo Verde", "Cambodia", "Cameroon", "Canada", "Cayman Is.", "Central African Rep.", "Chad", "Chile", "China", "Colombia", "Comoros", "Congo", "Cook Is.", "Costa Rica", "Croatia", "Cuba", "Curaçao", "Cyprus", "Czechia", "Côte d'Ivoire", "Dem. Rep. Congo", "Denmark", "Djibouti", "Dominica", "Dominican Rep.", "Ecuador", "Egypt", "El Salvador", "Eq. Guinea", "Eritrea", "Estonia", "Ethiopia", "Faeroe Is.", "Falkland Is.", "Fiji", "Finland", "Fr. Polynesia", "Fr. S. Antarctic Lands", "France", "Gabon", "Gambia", "Georgia", "Germany", "Ghana", "Greece", "Greenland", "Grenada", "Guam", "Guatemala", "Guernsey", "Guinea", "Guinea-Bissau", "Guyana", "Haiti", "Heard I. and McDonald Is.", "Honduras", "Hong Kong", "Hungary", "Iceland", "India", "Indian Ocean Ter.", "Indonesia", "Iran", "Iraq", "Ireland", "Isle of Man", "Israel", "Italy", "Jamaica", "Japan", "Jersey", "Jordan", "Kazakhstan", "Kenya", "Kiribati", "Kosovo", "Kuwait", "Kyrgyzstan", "Laos", "Latvia", "Lebanon", "Lesotho", "Liberia", "Libya", "Liechtenstein", "Lithuania", "Luxembourg", "Macao", "Macedonia", "Madagascar", "Malawi", "Malaysia", "Maldives", "Mali", "Malta", "Marshall Is.", "Mauritania", "Mauritius", "Mexico", "Micronesia", "Moldova", "Monaco", "Mongolia", "Montenegro", "Montserrat", "Morocco", "Mozambique", "Myanmar", "N. Cyprus", "N. Mariana Is.", "Namibia", "Nauru", "Nepal", "Netherlands", "New Caledonia", "New Zealand", "Nicaragua", "Niger", "Nigeria", "Niue", "Norfolk Island", "North Korea", "Norway", "Oman", "Pakistan", "Palau", "Palestine", "Panama", "Papua New Guinea", "Paraguay", "Peru", "Philippines", "Pitcairn Is.", "Poland", "Portugal", "Puerto Rico", "Qatar", "Romania", "Russia", "Rwanda", "S. Geo. and the Is.", "S. Sudan", "Saint Helena", "Saint Lucia", "Samoa", "San Marino", "Saudi Arabia", "Senegal", "Serbia", "Seychelles", "Siachen Glacier", "Sierra Leone", "Singapore", "Sint Maarten", "Slovakia", "Slovenia", "Solomon Is.", "Somalia", "Somaliland", "South Africa", "South Korea", "Spain", "Sri Lanka", "St-Barthélemy", "St-Martin", "St. Kitts and Nevis", "St. Pierre and Miquelon", "St. Vin. and Gren.", "Sudan", "Suriname", "Sweden", "Switzerland", "Syria", "São Tomé and Principe", "Taiwan", "Tajikistan", "Tanzania", "Thailand", "Timor-Leste", "Togo", "Tonga", "Trinidad and Tobago", "Tunisia", "Turkey", "Turkmenistan", "Turks and Caicos Is.", "U.S. Virgin Is.", "Uganda", "Ukraine", "United Arab Emirates", "United Kingdom", "United States of America", "Uruguay", "Uzbekistan", "Vanuatu", "Vatican", "Venezuela", "Vietnam", "W. Sahara", "Wallis and Futuna Is.", "Yemen", "Zambia", "Zimbabwe", "eSwatini", "Åland"]);
+const MAP_BLOCK = /(fuck|shit|bitch|cunt|nigg|fagg|rape|nazi|hitler|whore|slut|porn|pussy|http|www\.|\.com|@)/i;
+const MAP_RESERVED = /^(ibjstudio|ibj studio|ibj|admin|administrator|founder|support|official|moderator|staff)$/i;
+async function communityStats(env) {
+  const a = await env.DB.prepare('SELECT COUNT(*) AS n FROM ibj_ids').first();
+  const b = await env.DB.prepare('SELECT COUNT(DISTINCT country) AS n, COUNT(*) AS s FROM map_signatures WHERE hidden=0').first();
+  return { ibjers: a.n, countries: b.n, signatures: b.s };
+}
+async function mapStats({ env }) { try { return json(await communityStats(env)); } catch { return json({ ibjers: 0, countries: 0, signatures: 0 }); } }
+async function mapPublic({ env }) {
+  let rows = [];
+  try { rows = (await env.DB.prepare('SELECT s.alias,s.country,s.city,s.lat,s.lon,COALESCE(i.founding,0) AS f FROM map_signatures s LEFT JOIN ibj_ids i ON i.customer_id=s.customer_id WHERE s.hidden=0 ORDER BY s.updated_at DESC LIMIT 3000').all()).results; } catch { /* table not created yet */ }
+  let stats = { ibjers: 0, countries: 0, signatures: 0 };
+  try { stats = await communityStats(env); } catch { /* ignore */ }
+  return json({ ...stats, signatures: rows.map((r) => ({ a: r.alias, c: r.country, t: r.city || '', y: r.lat, x: r.lon, f: r.f ? 1 : 0 })), count: rows.length });
+}
+async function vaultSignatureGet({ request, env }) {
+  const c = await vaultCustomer(request, env);
+  if (!c) return json({ error: 'Please sign in.' }, 401);
+  const idr = await env.DB.prepare('SELECT 1 AS x FROM ibj_ids WHERE customer_id=?').bind(c.id).first();
+  if (!idr) return json({ eligible: false, signature: null });
+  const s = await env.DB.prepare('SELECT alias,country,city,lat,lon,hidden FROM map_signatures WHERE customer_id=?').bind(c.id).first();
+  return json({ eligible: true, signature: s ? { alias: s.alias, country: s.country, city: s.city || '', lat: s.lat, lon: s.lon, hidden: !!s.hidden } : null });
+}
+async function vaultSignatureSave({ request, env }) {
+  const c = await vaultCustomer(request, env);
+  if (!c) return json({ error: 'Please sign in.' }, 401);
+  const idr = await env.DB.prepare('SELECT 1 AS x FROM ibj_ids WHERE customer_id=?').bind(c.id).first();
+  if (!idr) return json({ error: 'The map is for IBJers. It unlocks after your first verified purchase.' }, 403);
+  if (!(await limit(env, 'sig:' + c.id, 12, 86400))) return json({ error: 'You have changed your signature many times today. Please try again tomorrow.' }, 429);
+  const b = await readJSON(request, 2000);
+  const alias = clean(b.alias, 24), country = clean(b.country, 60), city = clean(b.city, 40);
+  if (!/^[\p{L}\p{N} ._'-]{2,24}$/u.test(alias) || MAP_BLOCK.test(alias) || MAP_RESERVED.test(alias.trim())) return json({ error: 'Choose initials or a nickname of 2 to 24 letters or numbers. Please keep it friendly.' }, 400);
+  if (!MAP_COUNTRIES.has(country)) return json({ error: 'Please choose your country from the list.' }, 400);
+  if (city && (!/^[\p{L}\p{N} .,'-]{2,40}$/u.test(city) || MAP_BLOCK.test(city))) return json({ error: 'City name looks wrong. Leave it empty if you prefer.' }, 400);
+  const lat = Number(b.lat), lon = Number(b.lon);
+  if (!isFinite(lat) || !isFinite(lon) || Math.abs(lat) > 85 || Math.abs(lon) > 180) return json({ error: 'Please choose a place on the map.' }, 400);
+  // Privacy: the spot is rounded to roughly 25 km and nudged slightly, so nobody can be located exactly and markers do not sit on top of each other.
+  const h = await sha256('map:' + c.id);
+  const jy = (parseInt(h.slice(0, 4), 16) / 65535 - 0.5) * 0.6, jx = (parseInt(h.slice(4, 8), 16) / 65535 - 0.5) * 0.6;
+  const la = Math.max(-84, Math.min(84, Math.round(lat * 4) / 4 + jy)), lo = Math.max(-179.5, Math.min(179.5, Math.round(lon * 4) / 4 + jx));
+  const now = Date.now();
+  await env.DB.prepare('INSERT INTO map_signatures(customer_id,alias,country,city,lat,lon,hidden,created_at,updated_at) VALUES(?,?,?,?,?,?,0,?,?) ON CONFLICT(customer_id) DO UPDATE SET alias=excluded.alias,country=excluded.country,city=excluded.city,lat=excluded.lat,lon=excluded.lon,updated_at=excluded.updated_at').bind(c.id, alias, country, city, Math.round(la * 100) / 100, Math.round(lo * 100) / 100, now, now).run();
+  return json({ ok: true });
+}
+async function vaultSignatureRemove({ request, env }) {
+  const c = await vaultCustomer(request, env);
+  if (!c) return json({ error: 'Please sign in.' }, 401);
+  await env.DB.prepare('DELETE FROM map_signatures WHERE customer_id=?').bind(c.id).run();
+  return json({ ok: true });
+}
+async function adminMap({ request, env }) {
+  if (request.method === 'POST') {
+    const b = await readJSON(request, 1000);
+    const idr = await env.DB.prepare('SELECT customer_id FROM ibj_ids WHERE code=?').bind(clean(b.code, 20)).first();
+    if (!idr) return json({ error: 'Unknown IBJ ID' }, 404);
+    if (b.action === 'delete') await env.DB.prepare('DELETE FROM map_signatures WHERE customer_id=?').bind(idr.customer_id).run();
+    else if (b.action === 'hide' || b.action === 'show') await env.DB.prepare('UPDATE map_signatures SET hidden=? WHERE customer_id=?').bind(b.action === 'hide' ? 1 : 0, idr.customer_id).run();
+    else return json({ error: 'Unknown action' }, 400);
+    return json({ ok: true });
+  }
+  const rows = (await env.DB.prepare('SELECT i.code,c.email,s.alias,s.country,s.city,s.hidden,s.updated_at FROM map_signatures s JOIN ibj_ids i ON i.customer_id=s.customer_id JOIN customers c ON c.id=s.customer_id ORDER BY s.updated_at DESC LIMIT 300').all()).results;
+  return json({ signatures: rows, stats: await communityStats(env) });
+}
+
+// ---------- Picture uploads from the admin page (book covers, card artwork) ----------
+async function adminImage({ request, env }) {
+  const b = await readJSON(request, 2900000);
+  const id = clean(b.id, 90);
+  if (!/^(book|card)-[a-z0-9-]{3,80}$/.test(id)) return json({ error: 'Unknown picture slot.' }, 400);
+  if (id.startsWith('book-') && !CATALOG[id.slice(5)]) return json({ error: 'Unknown book.' }, 404);
+  if (b.remove) {
+    await env.DB.prepare('DELETE FROM site_images WHERE id=?').bind(id).run();
+    if (id.startsWith('book-')) await env.DB.prepare("UPDATE books SET cover='' WHERE product_id=?").bind(id.slice(5)).run();
+    return json({ ok: true });
+  }
+  const mime = String(b.mime || ''), data = String(b.data_b64 || '');
+  const sig = { 'image/jpeg': '/9j/', 'image/png': 'iVBOR', 'image/webp': 'UklGR' }[mime];
+  if (!sig || !data.startsWith(sig) || !/^[A-Za-z0-9+/=]+$/.test(data) || data.length > 1950000) return json({ error: 'Please use a JPG, PNG or WebP picture under about 1.4 MB.' }, 400);
+  await env.DB.prepare('INSERT INTO site_images(id,mime,data_b64,updated_at) VALUES(?,?,?,?) ON CONFLICT(id) DO UPDATE SET mime=excluded.mime,data_b64=excluded.data_b64,updated_at=excluded.updated_at').bind(id, mime, data, Date.now()).run();
+  const url = '/api/img?id=' + id;
+  if (id.startsWith('book-')) await env.DB.prepare('UPDATE books SET cover=? WHERE product_id=?').bind(url, id.slice(5)).run();
+  return json({ ok: true, url });
+}
+async function serveImage({ env }, url) {
+  const id = url.searchParams.get('id') || '';
+  if (!/^(book|card)-[a-z0-9-]{3,80}$/.test(id)) return json({ error: 'Not found' }, 404);
+  const r = await env.DB.prepare('SELECT mime,data_b64 FROM site_images WHERE id=?').bind(id).first();
+  if (!r) return json({ error: 'Not found' }, 404);
+  const bin = atob(r.data_b64), bytes = new Uint8Array(bin.length);
+  for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+  return new Response(bytes, { headers: { 'content-type': r.mime, 'cache-control': 'public, max-age=300', 'x-content-type-options': 'nosniff' } });
+}
+
 // ---------- Router ----------
 export async function onRequest(ctx) {
   const { request, env } = ctx;
@@ -1115,6 +1214,12 @@ export async function onRequest(ctx) {
     if (path === '/api/chat/start' && m === 'POST') return await chatStart(ctx);
     if (path === '/api/chat/send' && m === 'POST') return await chatSend(ctx);
     if (path === '/api/chat/messages' && m === 'GET') return await chatMessages(ctx, url);
+    if (path === '/api/img' && m === 'GET') return await serveImage(ctx, url);
+    if (path === '/api/map' && m === 'GET') return await mapPublic(ctx);
+    if (path === '/api/stats' && m === 'GET') return await mapStats(ctx);
+    if (path === '/api/vault/signature' && m === 'GET') return await vaultSignatureGet(ctx);
+    if (path === '/api/vault/signature' && m === 'POST') return await vaultSignatureSave(ctx);
+    if (path === '/api/vault/signature-remove' && m === 'POST') return await vaultSignatureRemove(ctx);
     if (path === '/api/marketplace/products' && m === 'GET') return await marketplaceProducts(ctx);
     if (path === '/api/vault/order-login' && m === 'POST') return await vaultOrderLogin(ctx);
     if (path === '/api/vault/profile' && m === 'POST') return await vaultProfile(ctx);
@@ -1136,6 +1241,8 @@ export async function onRequest(ctx) {
       if (path === '/api/admin/prompts' && (m === 'GET' || m === 'POST')) return await adminPrompts(ctx, url);
       if (path === '/api/admin/orders' && m === 'GET') return await adminOrders(ctx);
       if (path === '/api/admin/cards' && (m === 'GET' || m === 'POST')) return await adminCards(ctx);
+      if (path === '/api/admin/image' && m === 'POST') return await adminImage(ctx);
+      if (path === '/api/admin/map' && (m === 'GET' || m === 'POST')) return await adminMap(ctx);
       if (path === '/api/admin/members' && (m === 'GET' || m === 'POST')) return await adminMembers(ctx);
       if (path === '/api/admin/variants' && (m === 'GET' || m === 'POST')) return await adminVariants(ctx, url);
       if (path === '/api/admin/books' && (m === 'GET' || m === 'POST')) return await adminBooks(ctx);
