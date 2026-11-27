@@ -32,7 +32,7 @@ pre{white-space:pre-wrap;overflow-wrap:anywhere;background:#101010;border:1px so
 .found{display:inline-block;font-size:.7rem;letter-spacing:.16em;padding:.2rem .6rem;border:1px solid var(--gold);color:var(--gold)}
 .tabbar{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(.8rem + env(safe-area-inset-bottom,0px));z-index:45;display:flex;gap:.15rem;padding:.35rem;width:min(94vw,520px);background:rgba(21,21,21,.93);backdrop-filter:blur(12px);border:1px solid var(--line);border-radius:999px}
 .tabbar a{flex:1;display:flex;flex-direction:column;align-items:center;gap:.2rem;padding:.5rem 0;color:var(--mute);font-size:.6rem;text-decoration:none;border-radius:999px;min-height:48px}.tabbar a.on{background:#2b2b2b;color:var(--gold)}.tabbar svg{width:21px;height:21px}
-</style></head>
+</style><link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,700&family=Cinzel:wght@700&family=Libre+Baskerville&display=swap" rel="stylesheet"></head>
 <body><div class="wrap">
 <header class="top"><a class="brand" href="/"><b>IBJ</b>STUDIO</a><button class="btn ghost sm" id="out" hidden>Sign out</button></header>
 <main id="app"><p class="muted" style="margin-top:2rem">Opening your vault…</p></main></div>
@@ -88,6 +88,40 @@ function btn(t,f){var e=h('button',{class:'btn ghost sm',type:'button',text:t});
 var tools=h('div',{class:'rbar'},[btn('A−',function(){fs=Math.max(14,fs-2);draw()}),btn('A+',function(){fs=Math.min(30,fs+2);draw()}),btn('Light / Dark',function(){dark=!dark;draw()})]);
 var top=h('div',{class:'rbar'},[btn('← Previous',function(){if(pg>0){pg--;draw()}}),info,btn('Next →',function(){if(pg<pages.length-1){pg++;draw()}})]);
 shell('books',[backLink('book/'+id,b.title),tools,top,box]);draw()})}
+/*CARD-START*/
+var MONTHS=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+function fmtDate(ms){var d=new Date(ms);return MONTHS[d.getUTCMonth()]+' '+d.getUTCDate()+', '+d.getUTCFullYear()}
+function fitText(c,s,o){var size=o.size,min=o.minSize||Math.round(o.size*.45),fam=o.font||'Playfair Display';
+ function set(z){c.font=(o.style||'400')+' '+z+'px "'+fam+'", Georgia, serif'}
+ set(size);while(o.maxWidth&&c.measureText(s).width>o.maxWidth&&size>min){size-=2;set(size)}return size}
+function paintText(c,s,o,kind){var size=fitText(c,s,o),g;c.textAlign=o.align||'left';c.textBaseline='alphabetic';
+ if(kind==='gold'){g=c.createLinearGradient(0,o.y-size*.75,0,o.y);g.addColorStop(0,'#fbe7ad');g.addColorStop(.5,'#e0b45c');g.addColorStop(1,'#a8721f');c.fillStyle=g}
+ else if(kind==='silver'){g=c.createLinearGradient(0,o.y-size*.75,0,o.y);g.addColorStop(0,'#ffffff');g.addColorStop(.55,'#d9d9d9');g.addColorStop(1,'#9e9e9e');c.fillStyle=g}
+ else c.fillStyle=o.color||'#f2f0eb';
+ if(kind){c.shadowColor='rgba(0,0,0,.45)';c.shadowBlur=6;c.shadowOffsetY=2}
+ c.fillText(s,o.x,o.y);c.shadowBlur=0;c.shadowOffsetY=0}
+function roundRect(c,x,y,w,h,r){c.beginPath();c.moveTo(x+r,y);c.arcTo(x+w,y,x+w,y+h,r);c.arcTo(x+w,y+h,x,y+h,r);c.arcTo(x,y+h,x,y,r);c.arcTo(x,y,x+w,y,r);c.closePath()}
+function drawCard(c,img,L,m,photo){c.clearRect(0,0,L.width,L.height);c.drawImage(img,0,0,L.width,L.height);
+ if(photo&&L.photo){var p=L.photo,pw=photo.naturalWidth||photo.width,ph=photo.naturalHeight||photo.height,s=Math.max(p.w/pw,p.h/ph),sw=p.w/s,sh=p.h/s;c.save();roundRect(c,p.x,p.y,p.w,p.h,p.r||0);c.clip();c.drawImage(photo,(pw-sw)/2,(ph-sh)/2,sw,sh,p.x,p.y,p.w,p.h);c.restore()}
+ paintText(c,m.name,L.name,'silver');paintText(c,m.code,L.id,'gold');if(L.date&&m.joined)paintText(c,fmtDate(m.joined),L.date,null)}
+/*CARD-END*/
+function buildCard(kids,m,t){var L=t.layout,cv=h('canvas',{class:'card'}),c=cv.getContext&&cv.getContext('2d'),img=new Image(),photo=null,pkey='ibjphoto:'+m.code;
+ cv.width=L.width;cv.height=L.height;cv.style.cssText='width:100%;height:auto';kids.push(cv);
+ function render(){if(!c)return;var F=document.fonts&&document.fonts.load,jobs=[];
+  if(F)['name','id','date'].forEach(function(k){var o=L[k];if(o)jobs.push(document.fonts.load((o.style||'400')+' 40px "'+(o.font||'Playfair Display')+'"').catch(function(){}))});
+  Promise.all(jobs).then(function(){drawCard(c,img,L,m,photo)})}
+ function setPhoto(src){var im=new Image();im.onload=function(){photo=im;render()};im.src=src}
+ img.onload=render;img.onerror=function(){cv.replaceWith(h('p',{class:'err',text:'The card artwork could not be loaded. Please try again later.'}))};img.src=t.image;
+ try{var saved=localStorage.getItem(pkey);if(saved)setPhoto(saved)}catch(e){}
+ var msg=h('p',{class:'small muted',role:'status'}),inp=h('input',{type:'file',accept:'image/*',id:'cardphoto'}),rm=h('button',{class:'btn ghost sm',type:'button',text:'Remove photo'});
+ inp.onchange=function(){var f=inp.files&&inp.files[0];if(!f)return;if(!/^image\//.test(f.type)){msg.className='small err';msg.textContent='Please choose an image.';return}
+  var u=URL.createObjectURL(f),im=new Image();im.onload=function(){var k=Math.min(1,900/Math.max(im.naturalWidth,im.naturalHeight)),w=Math.round(im.naturalWidth*k),hh=Math.round(im.naturalHeight*k),tmp=document.createElement('canvas');tmp.width=w;tmp.height=hh;tmp.getContext('2d').drawImage(im,0,0,w,hh);var data=tmp.toDataURL('image/jpeg',.88);URL.revokeObjectURL(u);try{localStorage.setItem(pkey,data)}catch(e){}msg.className='small muted';msg.textContent='Photo added. It stays on this device only.';setPhoto(data)};im.onerror=function(){msg.className='small err';msg.textContent='That image could not be opened.'};im.src=u};
+ rm.onclick=function(){photo=null;try{localStorage.removeItem(pkey)}catch(e){}inp.value='';msg.textContent='Photo removed.';render()};
+ kids.push(h('div',{class:'panel'},[h('label',{for:'cardphoto',text:'Add your photo to the card (optional)'}),inp,h('p',{class:'small muted',text:'Your photo is placed on the card in your browser. It is never uploaded to IBJSTUDIO.'}),rm,msg]));
+ var row=h('div',{class:'chips'}),d=h('button',{class:'btn sm',type:'button',text:'Download card (PNG)'});
+ d.onclick=function(){cv.toBlob(function(b){var a=document.createElement('a');a.href=URL.createObjectURL(b);a.download=m.code+'.png';document.body.appendChild(a);a.click();a.remove()},'image/png')};row.appendChild(d);
+ if(navigator.canShare){var s=h('button',{class:'btn ghost sm',type:'button',text:'Share'});s.onclick=function(){cv.toBlob(function(b){var file=new File([b],m.code+'.png',{type:'image/png'});if(navigator.canShare({files:[file]}))navigator.share({files:[file],title:'My IBJer ID'}).catch(function(){})})};row.appendChild(s)}
+ kids.push(row)}
 function idView(){api('/api/vault/card').then(function(x){if(x.s!==200)return;var m=x.j.member,t=x.j.template,kids=[h('h2',{text:'My IBJer ID'})];
 if(!m){kids.push(h('p',{class:'muted',text:'Your permanent IBJer ID is being prepared. It appears here after your first verified purchase is processed.'}));return shell('id',kids)}
 kids.push(h('div',{class:'panel'},[h('p',{class:'muted small',text:'Your permanent IBJer ID'}),h('h2',{text:m.code}),m.founding?h('span',{class:'found',text:'FOUNDING IBJER'}):null,h('p',{class:'muted small',text:'This ID is yours for life. It does not change when you buy again or move up a level.'})]));
@@ -95,9 +129,7 @@ var f=h('form',{class:'panel'},[h('label',{text:'Name or nickname on your card'}
 f.onsubmit=function(e){e.preventDefault();api('/api/vault/profile',{method:'POST',body:{display_name:document.getElementById('dn').value}}).then(function(r){if(r.s===200)idView();else{var d=document.getElementById('dm');d.className='small err';d.textContent=r.j.error||'Could not save.'}})};kids.push(f);
 if(!t)kids.push(h('p',{class:'panel muted',text:'Your official IBJer ID card artwork is being prepared. Your ID number above is already reserved for you.'}));
 else if(!m.name)kids.push(h('p',{class:'panel muted',text:'Add the name you want on your card, then your card will appear here.'}));
-else{var cv=h('canvas',{class:'card'});kids.push(cv);var img=new Image();img.onload=function(){var L=t.layout;cv.width=L.width;cv.height=L.height;var c=cv.getContext('2d');c.drawImage(img,0,0,L.width,L.height);function txt(s,o){c.fillStyle=o.color||'#f2f0eb';c.font=(o.weight||'500')+' '+o.size+'px '+(o.font||'Georgia, serif');c.textAlign=o.align||'left';c.textBaseline='alphabetic';c.fillText(s,o.x,o.y)}txt(m.name,L.name);txt(m.code,L.id);cv.style.width='100%';cv.style.height='auto';
-var row=h('div',{class:'chips'});var d=h('button',{class:'btn sm',type:'button',text:'Download card (PNG)'});d.onclick=function(){cv.toBlob(function(b){var a=document.createElement('a');a.href=URL.createObjectURL(b);a.download=m.code+'.png';document.body.appendChild(a);a.click();a.remove()},'image/png')};row.appendChild(d);
-if(navigator.canShare){var s=h('button',{class:'btn ghost sm',type:'button',text:'Share'});s.onclick=function(){cv.toBlob(function(b){var file=new File([b],m.code+'.png',{type:'image/png'});if(navigator.canShare({files:[file]}))navigator.share({files:[file],title:'My IBJer ID'}).catch(function(){})})};row.appendChild(s)}cv.after(row)};img.onerror=function(){cv.replaceWith(h('p',{class:'err',text:'The card artwork could not be loaded. Please try again later.'}))};img.src=t.image}
+else buildCard(kids,m,t);
 shell('id',kids)})}
 function history(){shell('history',[h('h2',{text:'My Purchase History'}),me.purchases.length?h('div',{class:'list'},me.purchases.map(function(p){return h('div',{style:'display:block'},[h('b',{text:fmtDate(p.at)+' · ₦'+Number(p.ngn).toLocaleString()}),h('p',{class:'muted small',style:'margin:.2rem 0',text:'Base price $'+Number(p.usd).toFixed(2)+' · paid in naira'}),h('p',{style:'margin:.2rem 0',text:p.items.map(function(i){return i.title}).join(', ')})])})):h('p',{class:'muted',text:'No purchases yet.'})])}
 function route(){if(!me)return;var r=(location.hash||'#overview').slice(1),p=r.split('/');
