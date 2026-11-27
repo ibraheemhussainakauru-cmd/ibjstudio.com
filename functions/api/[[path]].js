@@ -1050,12 +1050,12 @@ async function vaultProfile({ request, env }) {
 async function vaultCard({ request, env }) {
   const c = await vaultCustomer(request, env);
   if (!c) return json({ error: 'Please sign in.' }, 401);
-  const idr = await env.DB.prepare('SELECT code,founding FROM ibj_ids WHERE customer_id=?').bind(c.id).first();
+  const idr = await env.DB.prepare('SELECT code,founding,created_at FROM ibj_ids WHERE customer_id=?').bind(c.id).first();
   if (!idr) return json({ member: null, template: null });
   const pr = await env.DB.prepare('SELECT display_name,level FROM member_profiles WHERE customer_id=?').bind(c.id).first();
   const level = pr?.level || 'classic', kind = idr.founding ? 'founding' : 'standard';
   const t = await env.DB.prepare('SELECT image_path,layout FROM card_templates WHERE level=? AND kind=? AND active=1').bind(level, kind).first();
-  return json({ member: { code: idr.code, founding: !!idr.founding, name: pr?.display_name || '', level }, template: t ? { kind, image: t.image_path, layout: JSON.parse(t.layout) } : null });
+  return json({ member: { code: idr.code, founding: !!idr.founding, name: pr?.display_name || '', level, joined: idr.created_at }, template: t ? { kind, image: t.image_path, layout: JSON.parse(t.layout) } : null });
 }
 async function marketplaceProducts({ env }) {
   try {
@@ -1074,6 +1074,8 @@ async function adminCards({ request, env }) {
   try { layout = typeof b.layout === 'string' ? JSON.parse(b.layout) : b.layout; } catch { return json({ error: 'Layout is not valid JSON.' }, 400); }
   const okBox = (o) => o && ['x', 'y', 'size'].every((k) => typeof o[k] === 'number' && isFinite(o[k]));
   if (!layout || typeof layout.width !== 'number' || typeof layout.height !== 'number' || !okBox(layout.name) || !okBox(layout.id)) return json({ error: 'Layout needs width, height, name{x,y,size} and id{x,y,size}.' }, 400);
+  const okRect = (o) => o && ['x', 'y', 'w', 'h'].every((k) => typeof o[k] === 'number' && isFinite(o[k]));
+  if ((layout.date && !okBox(layout.date)) || (layout.photo && !okRect(layout.photo))) return json({ error: 'date needs x,y,size and photo needs x,y,w,h.' }, 400);
   await env.DB.prepare('INSERT INTO card_templates(level,kind,image_path,layout,active,updated_at) VALUES(?,?,?,?,1,?) ON CONFLICT(level,kind) DO UPDATE SET image_path=excluded.image_path,layout=excluded.layout,active=1,updated_at=excluded.updated_at').bind(level, kind, path, JSON.stringify(layout), Date.now()).run();
   return json({ ok: true });
 }
@@ -1144,4 +1146,3 @@ export async function onRequest(ctx) {
     return json({ error: e && e.status === 413 ? 'Message too large.' : e && e.status === 400 ? 'Invalid request.' : 'Something went wrong. Please try again.' }, (e && e.status) || 500);
   }
 }
-
