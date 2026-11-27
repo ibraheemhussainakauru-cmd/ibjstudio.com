@@ -52,16 +52,17 @@ f2.onsubmit=function(e){e.preventDefault();var m=document.getElementById('lm');a
 put(h('h1',{style:'margin:1.6rem 0 .4rem',text:'MY VAULT'}),h('p',{class:'muted',text:'Your purchases, prompts, books and IBJer ID, all in one place. Sign in to open it.'}),msg?h('p',{class:'err',text:msg}):null,f1,f2)}
 function tokenView(tok){out.hidden=true;var b=h('button',{class:'btn',text:'OPEN MY VAULT'});var m=h('p',{class:'err small'});b.onclick=function(){b.disabled=true;api('/api/vault/login',{method:'POST',body:{token:tok}}).then(function(x){if(x.s===200){window.history.replaceState(null,'','/vault');load()}else{b.disabled=false;m.textContent=x.j.error||'This link is not valid.'}})};put(h('h1',{style:'margin:1.6rem 0 .6rem',text:'Welcome back, IBJer.'}),h('p',{class:'muted',text:'Tap the button to open your vault.'}),b,m)}
 /* ---------- shell ---------- */
-var SECTIONS=[['overview','Overview'],['purchases','My Purchases'],['prompts','My Prompts'],['ai','My AI Versions'],['books','My Digital Books'],['id','My IBJer ID'],['history','My Purchase History']],SOON=['My Achievements','My Referrals','My Earnings','My Map Signature'];
+var SECTIONS=[['overview','Overview'],['purchases','My Purchases'],['prompts','My Prompts'],['ai','My AI Versions'],['books','My Digital Books'],['id','My IBJer ID'],['map','My Map Signature'],['history','My Purchase History']],SOON=['My Achievements','My Referrals','My Earnings'];
 function shell(active,kids){out.hidden=false;var nav=h('div',{class:'snav'},SECTIONS.map(function(s){return h('a',{href:'#'+s[0],class:s[0]===active?'on':''},[s[1]])}).concat(SOON.map(function(s){return h('span',{title:'Coming soon',text:s})})));put(nav,h('div',null,kids))}
 function backLink(to,label){return h('p',null,[h('a',{href:'#'+to,text:'← '+label})])}
 function kindLabel(k){return k==='book'?'Digital book':k==='video'?'Video prompt':k==='story'?'Story prompt':'Picture prompt'}
 /* ---------- views ---------- */
 function overview(){var kids=[h('h1',{style:'margin:.4rem 0',text:'Welcome to the IBJers community.'}),h('p',{class:'muted',text:me.email})];
 if(me.member){var p=h('div',{class:'panel'},[h('p',{class:'muted small',text:'Your permanent IBJer ID'}),h('h2',{text:me.member.code})]);if(me.member.founding)p.appendChild(h('span',{class:'found',text:'FOUNDING IBJER'}));kids.push(p)}
+if(me.member&&!me.signature)kids.push(h('div',{class:'panel'},[h('h2',{text:'LEAVE YOUR CREATIVE MARK.'}),h('p',{class:'muted',text:"You've unlocked your product. Now find your place on our world map and leave your signature as an IBJer."}),h('a',{class:'btn sm',href:'/map',text:'OPEN THE IBJERS WORLD MAP'})]));
 var t=function(href,title,sub){return h('a',{class:'tile',href:href},[h('b',{text:title}),h('small',{text:sub})])};
 var soon=function(title){return h('div',{class:'tile soon'},[h('b',{text:title}),h('small',{text:'Coming soon'})])};
-var tiles=[t('#purchases','My Purchases',me.purchases.reduce(function(n,p){return n+p.items.length},0)+' unlocked'),t('#prompts','My Prompts',me.prompts.length+' prompts'),t('#ai','My AI Versions','Choose your AI platform'),t('#books','My Digital Books',me.books.length+' books'),t('#id','My IBJer ID',me.member?me.member.code:'Your permanent ID'),t('#history','My Purchase History',me.purchases.length+' orders'),soon('My Achievements'),soon('My Referrals'),soon('My Earnings'),soon('My Map Signature')];
+var tiles=[t('#purchases','My Purchases',me.purchases.reduce(function(n,p){return n+p.items.length},0)+' unlocked'),t('#prompts','My Prompts',me.prompts.length+' prompts'),t('#ai','My AI Versions','Choose your AI platform'),t('#books','My Digital Books',me.books.length+' books'),t('#id','My IBJer ID',me.member?me.member.code:'Your permanent ID'),t('#map','My Map Signature',me.signature?(me.signature.alias+' · '+me.signature.country):'Leave your creative mark'),t('#history','My Purchase History',me.purchases.length+' orders'),soon('My Achievements'),soon('My Referrals'),soon('My Earnings')];
 if(me.creator&&me.creator.approved)tiles.push(soon('Creator Dashboard'));
 kids.push(h('div',{class:'tiles'},tiles));shell('overview',kids)}
 function itemRow(i,href){return h('div',null,[h('span',null,[i.title+' ',h('span',{class:'kind',text:kindLabel(i.kind)})]),h('a',{class:'btn ghost sm',href:href,text:i.kind==='book'?'Open':'Unlock'})])}
@@ -131,10 +132,18 @@ if(!t)kids.push(h('p',{class:'panel muted',text:'Your official IBJer ID card art
 else if(!m.name)kids.push(h('p',{class:'panel muted',text:'Add the name you want on your card, then your card will appear here.'}));
 else buildCard(kids,m,t);
 shell('id',kids)})}
+function mapView(){var kids=[h('h2',{text:'My Map Signature'})],s=me.signature;
+if(!me.member)kids.push(h('p',{class:'panel muted',text:'The IBJers World Map opens for you after your first verified purchase is processed.'}));
+else if(!s)kids.push(h('div',{class:'panel'},[h('h2',{text:'LEAVE YOUR CREATIVE MARK.'}),h('p',{class:'muted',text:"You've unlocked your product. Now find your place on our world map and leave your signature as an IBJer. Taking part is optional, and you choose what shows: initials or a nickname, and your country."}),h('a',{class:'btn sm',href:'/map',text:'OPEN THE IBJERS WORLD MAP'})]));
+else{var box=h('div',{class:'panel'},[h('p',{class:'muted small',text:'Your signature on the map'}),h('h2',{text:s.alias}),h('p',{class:'muted',text:(s.city?s.city+', ':'')+s.country}),s.hidden?h('p',{class:'small err',text:'Your signature is hidden from the map by IBJSTUDIO. Please contact us if you think this is a mistake.'}):null]);
+ var row=h('div',{class:'chips'}),ed=h('a',{class:'btn sm',href:'/map',text:'SEE IT AND CHANGE IT ON THE MAP'}),rm=h('button',{class:'btn ghost sm',type:'button',text:'Remove my signature'});
+ rm.onclick=function(){if(!confirm('Remove your signature from the map? You can add it again any time.'))return;api('/api/vault/signature-remove',{method:'POST',body:{}}).then(function(r){if(r.s===200){me.signature=null;mapView()}})};
+ row.appendChild(ed);row.appendChild(rm);box.appendChild(row);kids.push(box)}
+kids.push(h('p',{class:'small muted'},[h('a',{href:'/map',text:'Explore the IBJers World Map'})]));shell('map',kids)}
 function history(){shell('history',[h('h2',{text:'My Purchase History'}),me.purchases.length?h('div',{class:'list'},me.purchases.map(function(p){return h('div',{style:'display:block'},[h('b',{text:fmtDate(p.at)+' · ₦'+Number(p.ngn).toLocaleString()}),h('p',{class:'muted small',style:'margin:.2rem 0',text:'Base price $'+Number(p.usd).toFixed(2)+' · paid in naira'}),h('p',{style:'margin:.2rem 0',text:p.items.map(function(i){return i.title}).join(', ')})])})):h('p',{class:'muted',text:'No purchases yet.'})])}
 function route(){if(!me)return;var r=(location.hash||'#overview').slice(1),p=r.split('/');
 if(p[0]==='prompt')return promptView(decodeURIComponent(p[1]||''));if(p[0]==='book')return bookView(decodeURIComponent(p[1]||''));if(p[0]==='read')return reader(decodeURIComponent(p[1]||''));
-({purchases:purchases,prompts:prompts,ai:aiList,books:books,id:idView,history:history}[p[0]]||overview)()}
+({purchases:purchases,prompts:prompts,ai:aiList,books:books,id:idView,map:mapView,history:history}[p[0]]||overview)()}
 function load(){api('/api/vault/me').then(function(x){if(x.s===200){me=x.j;out.hidden=false;route()}else{me=null;signIn()}})}
 out.onclick=function(){api('/api/vault/logout',{method:'POST',body:{}}).then(function(){me=null;location.hash='';signIn()})};
 addEventListener('hashchange',route);
