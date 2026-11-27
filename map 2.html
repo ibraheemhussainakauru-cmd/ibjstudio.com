@@ -1,0 +1,116 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#0a0a0a"><title>The IBJers World Map · IBJSTUDIO</title><meta name="description" content="IBJers around the world have left their creative mark. Explore the IBJSTUDIO community map.">
+<style>
+:root{color-scheme:dark;--bg:#0a0a0a;--panel:#151515;--ink:#f2f0eb;--mute:#a5a199;--gold:#d8bd8a;--line:#262626;--onGold:#17130b;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px)}
+*,*::before,*::after{box-sizing:inherit}
+body{margin:0;background:var(--bg);color:var(--ink);font:300 15px/1.6 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;padding-bottom:calc(3rem + env(safe-area-inset-bottom,0px))}
+a{color:var(--gold)}h1,h2{font-family:Georgia,serif;font-weight:300;line-height:1.15;margin:0}
+.wrap{width:min(1100px,100% - 2rem);margin-inline:auto}
+header.top{display:flex;justify-content:space-between;align-items:center;padding:1rem 0;border-bottom:1px solid var(--line)}
+.brand{letter-spacing:.18em;text-decoration:none;color:var(--ink)}.brand b{color:var(--gold)}
+header.top nav a{margin-left:1rem;font-size:.85rem;text-decoration:none}
+.eyebrow{margin:2rem 0 .4rem;font-size:.72rem;letter-spacing:.3em;color:var(--gold)}
+h1{font-size:clamp(1.7rem,6vw,2.6rem);letter-spacing:.06em}
+.muted{color:var(--mute)}.small{font-size:.82rem}.err{color:#ff9a8a}.ok{color:#9fd8a8}
+.stats{display:flex;flex-wrap:wrap;gap:.8rem;margin:1.4rem 0}
+.stat{flex:1 1 150px;padding:1rem 1.2rem;background:var(--panel);border:1px solid var(--line);border-top:2px solid var(--gold)}
+.stat b{display:block;font:300 2rem Georgia,serif;color:var(--gold);font-variant-numeric:tabular-nums}.stat small{letter-spacing:.14em;font-size:.66rem;color:var(--mute)}
+.mapbox{position:relative;background:radial-gradient(ellipse at 50% 40%,#14120d,#090909 70%);border:1px solid var(--line);overflow:hidden}
+#map{display:block;width:100%;height:auto;aspect-ratio:1000/520;min-height:260px;touch-action:none;cursor:grab}
+#map:active{cursor:grabbing}
+.sea{fill:#0b0b0b;stroke:#3a3220;stroke-width:.8}.grat{fill:none;stroke:#17150f;stroke-width:.4}
+.ct{fill:#1a1813;stroke:#35301f;stroke-width:.35;vector-effect:non-scaling-stroke}.ct:hover{fill:#241f14}.ct.sel{fill:#2e2714;stroke:var(--gold)}
+.pin{cursor:pointer}.pin .glow{opacity:.9}.pin .dot{fill:#f4dca0;stroke:#a8721f;stroke-width:.8}.pin.f .dot{fill:#fff6dc;stroke:#d8bd8a;stroke-width:1.4}
+.pin .ring{fill:none;stroke:var(--gold);stroke-width:1;opacity:.6;transform-box:fill-box;transform-origin:center;animation:pulse 2.6s ease-out infinite}
+@keyframes pulse{0%{transform:scale(.5);opacity:.7}100%{transform:scale(2.4);opacity:0}}
+.pin .lab{display:none;font:400 9px system-ui,sans-serif;fill:#f2f0eb;paint-order:stroke;stroke:#000;stroke-width:2.4px}.zoomed .pin .lab{display:block}
+.mine .dot{fill:#fff;stroke:var(--gold);stroke-width:1.6}
+.zoom{position:absolute;right:.6rem;top:.6rem;display:flex;flex-direction:column;gap:.35rem}
+.zoom button{width:38px;height:38px;background:rgba(10,10,10,.85);border:1px solid var(--gold);color:var(--gold);font:400 1.2rem system-ui;cursor:pointer}
+.tip{position:absolute;z-index:3;min-width:150px;max-width:230px;padding:.7rem .9rem;background:rgba(14,14,14,.96);border:1px solid var(--gold);font-size:.85rem;pointer-events:none}
+.tip b{display:block;font:400 1rem Georgia,serif;color:var(--gold)}.tip .fb{display:inline-block;margin-top:.3rem;font-size:.62rem;letter-spacing:.14em;border:1px solid var(--gold);color:var(--gold);padding:.05rem .4rem}
+.hide{display:none!important}
+.panel{background:var(--panel);border:1px solid var(--line);padding:1.3rem;margin:1.2rem 0}
+.panel h2{font-size:1.5rem;letter-spacing:.05em;margin-bottom:.3rem}
+label{display:block;margin:.9rem 0 .2rem;font-size:.8rem;color:var(--mute)}
+input,select{width:100%;padding:.8rem;background:#0f0f0f;color:var(--ink);border:1px solid var(--line);font:inherit;border-radius:0}
+input:focus,select:focus{outline:1px solid var(--gold)}
+.btn{display:inline-block;padding:.8rem 1.4rem;background:var(--gold);color:var(--onGold);border:0;font-weight:500;font-size:.85rem;font-family:inherit;letter-spacing:.1em;text-decoration:none;cursor:pointer;margin-top:1rem}
+.btn.ghost{background:none;color:var(--gold);border:1px solid var(--gold);margin-left:.5rem}.btn[disabled]{opacity:.5}
+.recent{display:flex;flex-wrap:wrap;gap:.5rem;margin:.6rem 0 0;padding:0;list-style:none}.recent li{padding:.3rem .8rem;border:1px solid var(--line);border-radius:999px;font-size:.8rem}.recent li span{color:var(--mute)}
+.tag{margin-top:2.4rem;text-align:center;letter-spacing:.35em;font-size:.72rem;color:var(--gold)}
+@media (prefers-reduced-motion:reduce){.pin .ring{animation:none}}
+</style></head><body>
+<header class="top wrap"><a class="brand" href="/"><b>IBJ</b>STUDIO</a><nav><a href="/vault">My Vault</a></nav></header>
+<main class="wrap">
+<p class="eyebrow">CREATE. UNLOCK. BELONG.</p>
+<h1>THE IBJERS WORLD MAP</h1>
+<p class="muted">IBJers around the world have left their creative mark. Zoom in, explore, and see where our community is growing.</p>
+<div class="stats"><div class="stat"><b id="s1">0</b><small>IBJERS WORLDWIDE</small></div><div class="stat"><b id="s2">0</b><small>COUNTRIES REPRESENTED</small></div><div class="stat"><b id="s3">0</b><small>SIGNATURES ON THE MAP</small></div></div>
+<div class="mapbox" id="box"><svg id="map" viewBox="0 0 1000 520" role="img" aria-label="Interactive world map showing where IBJers have left their signature"></svg>
+<div class="zoom"><button id="zin" type="button" aria-label="Zoom in">+</button><button id="zout" type="button" aria-label="Zoom out">&minus;</button><button id="zreset" type="button" aria-label="Reset the map">&#8962;</button></div><div id="tip" class="tip hide" role="status"></div></div>
+<p id="mapmsg" class="small muted" role="status">Loading the map&hellip;</p>
+<section class="panel" id="mark" aria-live="polite"><h2>LEAVE YOUR CREATIVE MARK.</h2><p class="muted">Loading&hellip;</p></section>
+<h2 style="font-size:1.15rem;margin-top:1.6rem">Recently joined</h2><ul class="recent" id="recent"></ul>
+<p class="tag">ONCE AN IBJER, ALWAYS AN IBJER.</p>
+</main>
+<noscript><p class="wrap">The IBJers World Map needs JavaScript to show the map.</p></noscript>
+<script src="/d3.min.js"></script><script src="/topojson-client.min.js"></script>
+<script>
+(function(){
+var $=function(i){return document.getElementById(i)};
+function api(p,o){o=o||{};o.credentials='same-origin';if(o.body&&typeof o.body!=='string'){o.body=JSON.stringify(o.body);o.headers={'content-type':'application/json'}}return fetch(p,o).then(function(r){return r.json().then(function(j){return{s:r.status,j:j}},function(){return{s:r.status,j:{}}})})}
+function h(t,a,k){var e=document.createElement(t);a=a||{};for(var n in a){if(n==='text')e.textContent=a[n];else if(n==='class')e.className=a[n];else e.setAttribute(n,a[n])}(k||[]).forEach(function(c){if(c)e.appendChild(typeof c==='string'?document.createTextNode(c):c)});return e}
+var NS='http://www.w3.org/2000/svg',W=1000,H=520,svg=d3.select('#map'),proj=d3.geoNaturalEarth1().fitExtent([[6,6],[W-6,H-6]],{type:'Sphere'}),path=d3.geoPath(proj);
+var feats=[],sigs=[],gC,gP,gS,k=1,sel=null,mine=null,me=null,raf=0;
+var reduce=window.matchMedia&&window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+function count(el,to){to=+to||0;if(reduce||to<2){el.textContent=to.toLocaleString('en-US');return}var t0=performance.now();(function f(t){var p=Math.min(1,(t-t0)/700);el.textContent=Math.round(to*(2-p)*p).toLocaleString('en-US');if(p<1)requestAnimationFrame(f)})(t0)}
+function stats(j){count($('s1'),j.ibjers);count($('s2'),j.countries);count($('s3'),j.count!=null?j.count:j.signatures)}
+function largest(f){var g=f.geometry;if(g.type!=='MultiPolygon')return f;var best=null,a=-1;g.coordinates.forEach(function(c){var p={type:'Polygon',coordinates:c},ar=d3.geoArea(p);if(ar>a){a=ar;best=p}});return{type:'Feature',properties:f.properties,geometry:best}}
+function drawMap(){svg.selectAll('*').remove();var defs=svg.append('defs'),rg=defs.append('radialGradient').attr('id','glow');rg.append('stop').attr('offset','0%').attr('stop-color','#f4dca0').attr('stop-opacity',.95);rg.append('stop').attr('offset','35%').attr('stop-color','#d8bd8a').attr('stop-opacity',.45);rg.append('stop').attr('offset','100%').attr('stop-color','#d8bd8a').attr('stop-opacity',0);
+ var g=svg.append('g').attr('id','vp');g.append('path').attr('class','sea').attr('d',path({type:'Sphere'}));g.append('path').attr('class','grat').attr('d',path(d3.geoGraticule10()));
+ gC=g.append('g');gC.selectAll('path').data(feats).join('path').attr('class','ct').attr('d',path).attr('data-name',function(d){return d.properties.name});
+ gP=g.append('g');gS=g.append('g');
+ var zoom=d3.zoom().scaleExtent([1,60]).translateExtent([[0,0],[W,H]]).on('zoom',function(e){g.attr('transform',e.transform);k=e.transform.k;svg.classed('zoomed',k>=3.5);if(!raf)raf=requestAnimationFrame(function(){raf=0;scale()})});
+ svg.call(zoom);svg.on('dblclick.zoom',null);window.__zoom=zoom;
+ $('zin').onclick=function(){svg.transition().duration(300).call(zoom.scaleBy,1.7)};$('zout').onclick=function(){svg.transition().duration(300).call(zoom.scaleBy,1/1.7)};$('zreset').onclick=function(){svg.transition().duration(450).call(zoom.transform,d3.zoomIdentity)};
+ svg.on('click',onTap)}
+function scale(){var s='scale('+1/k+')';d3.selectAll('#map .in').attr('transform',s)}
+function pinNode(d,cls){var p=proj([d.x,d.y]);var n=document.createElementNS(NS,'g');n.setAttribute('class','pin'+(d.f?' f':'')+(cls?' '+cls:''));n.setAttribute('transform','translate('+p[0].toFixed(2)+','+p[1].toFixed(2)+')');n.setAttribute('tabindex','0');n.setAttribute('role','button');n.setAttribute('aria-label',d.a+', '+d.c);
+ var i=document.createElementNS(NS,'g');i.setAttribute('class','in');i.setAttribute('transform','scale('+1/k+')');
+ [['circle',{class:'glow',r:16,fill:'url(#glow)'}],['circle',{class:'ring',r:5}],['circle',{class:'dot',r:d.f?4.4:3.4}],['text',{class:'lab',x:7,y:3}]].forEach(function(x){var e=document.createElementNS(NS,x[0]);for(var a in x[1])e.setAttribute(a,x[1][a]);if(x[0]==='text')e.textContent=d.a;i.appendChild(e)});n.appendChild(i);n.__d=d;return n}
+function renderPins(){gP.selectAll('*').remove();var f=document.createDocumentFragment();sigs.forEach(function(d){f.appendChild(pinNode(d,'')) });gP.node().appendChild(f);
+ var r=$('recent');r.textContent='';sigs.slice(0,12).forEach(function(d){r.appendChild(h('li',{},[d.a+' ',h('span',{text:'· '+d.c})]))})}
+function showTip(n){var d=n.__d,t=$('tip');t.textContent='';t.appendChild(h('b',{text:d.a}));t.appendChild(h('span',{class:'muted',text:(d.t?d.t+', ':'')+d.c}));if(d.f){t.appendChild(h('br'));t.appendChild(h('span',{class:'fb',text:'FOUNDING IBJER'}))}
+ t.classList.remove('hide');var b=$('box').getBoundingClientRect(),r=n.getBoundingClientRect();var x=r.left-b.left+r.width/2-80,y=r.top-b.top-t.offsetHeight-10;t.style.left=Math.max(6,Math.min(b.width-t.offsetWidth-6,x))+'px';t.style.top=(y<6?r.bottom-b.top+10:y)+'px'}
+function hideTip(){$('tip').classList.add('hide')}
+function onTap(ev){var pin=ev.target.closest&&ev.target.closest('.pin');if(pin&&pin.__d){showTip(pin);ev.stopPropagation();return}hideTip();if(!$('f_country'))return;
+ var p;try{p=d3.pointer(ev,svg.select('#vp').node())}catch(e){return}var ll=proj.invert(p);if(!ll||!isFinite(ll[0])||!isFinite(ll[1]))return;
+ var f=null;for(var i=0;i<feats.length;i++){if(d3.geoContains(feats[i],ll)){f=feats[i];break}}
+ if(!f){say('Please tap on land to place your mark.','err');return}
+ $('f_country').value=f.properties.name;sel={x:ll[0],y:ll[1]};markCountry(f.properties.name);preview();say('Spot chosen. Add your name or initials, then leave your mark.','ok')}
+function markCountry(n){gC.selectAll('path').classed('sel',function(d){return d.properties.name===n})}
+function preview(){gS.selectAll('*').remove();if(!sel)return;gS.node().appendChild(pinNode({x:sel.x,y:sel.y,a:($('f_alias')&&$('f_alias').value)||'You',c:$('f_country')?$('f_country').value:'',f:0},'mine'))}
+function zoomTo(f){var b=path.bounds(f),dx=b[1][0]-b[0][0],dy=b[1][1]-b[0][1],x=(b[0][0]+b[1][0])/2,y=(b[0][1]+b[1][1])/2,s=Math.max(1,Math.min(14,.8/Math.max(dx/W,dy/H)));svg.transition().duration(700).call(window.__zoom.transform,d3.zoomIdentity.translate(W/2-s*x,H/2-s*y).scale(s))}
+function say(t,c){var m=$('fmsg');if(m){m.className='small '+(c||'muted');m.textContent=t}}
+function panel(kids){var p=$('mark');p.textContent='';p.appendChild(h('h2',{text:'LEAVE YOUR CREATIVE MARK.'}));kids.forEach(function(x){if(x)p.appendChild(x)})}
+function form(){var opts=feats.map(function(f){return f.properties.name}).sort(function(a,b){return a.localeCompare(b)});
+ var sl=h('select',{id:'f_country'},[h('option',{value:'',text:'Choose your country'})].concat(opts.map(function(n){return h('option',{value:n,text:n})})));
+ var al=h('input',{id:'f_alias',type:'text',maxlength:'24',placeholder:'e.g. AB or Ada',autocomplete:'off'}),ct=h('input',{id:'f_city',type:'text',maxlength:'40',placeholder:'Optional',autocomplete:'off'});
+ var go=h('button',{class:'btn',type:'button',id:'f_go',text:mine?'UPDATE MY MARK':'LEAVE MY MARK'}),rm=mine?h('button',{class:'btn ghost',type:'button',id:'f_rm',text:'REMOVE ME'}):null;
+ panel([h('p',{class:'muted',text:mine?'Your signature is on the map. You can change it any time.':"You've unlocked your product. Now find your place on our world map and leave your signature as an IBJer."}),
+  h('label',{for:'f_country',text:'Your country'}),sl,h('label',{for:'f_city',text:'City (optional)'}),ct,h('label',{for:'f_alias',text:'Initials or nickname shown on the map'}),al,
+  h('p',{class:'small muted',text:'Tap the map to fine-tune your spot (optional). Your pin is rounded to a wider area, so nobody can find your exact location. Taking part is optional.'}),h('div',{},[go,rm]),h('p',{class:'small',id:'fmsg',role:'status'})]);
+ if(mine){sl.value=mine.country;ct.value=mine.city||'';al.value=mine.alias;sel={x:mine.lon,y:mine.lat};markCountry(mine.country);preview()}
+ sl.onchange=function(){var f=feats.filter(function(x){return x.properties.name===sl.value})[0];if(!f){sel=null;preview();return}var c=d3.geoCentroid(largest(f));sel={x:c[0],y:c[1]};markCountry(sl.value);preview();zoomTo(f)};
+ al.oninput=preview;
+ go.onclick=function(){if(!sel||!sl.value){say('Choose your country, or tap the map, first.','err');return}go.disabled=true;say('Placing your mark…');
+  api('/api/vault/signature',{method:'POST',body:{alias:al.value,country:sl.value,city:ct.value,lat:sel.y,lon:sel.x}}).then(function(r){go.disabled=false;if(r.s===200){say('Your mark is on the map. Welcome to the IBJers community.','ok');load(true)}else say(r.j.error||'Could not save. Please try again.','err')})};
+ if(rm)rm.onclick=function(){api('/api/vault/signature-remove',{method:'POST',body:{}}).then(function(r){if(r.s===200){mine=null;sel=null;gS.selectAll('*').remove();load(true)}})}}
+function account(){api('/api/vault/signature').then(function(r){
+ if(r.s===401){panel([h('p',{class:'muted',text:'IBJers can leave a signature here. Sign in to your vault to take part.'}),h('a',{class:'btn',href:'/vault',text:'SIGN IN TO MY VAULT'})]);return}
+ if(r.s===200&&r.j.eligible===false){panel([h('p',{class:'muted',text:'The map belongs to IBJers. Your place unlocks after your first verified purchase.'}),h('a',{class:'btn',href:'/#n-shop',text:'EXPLORE THE SHOP'})]);return}
+ if(r.s===200){mine=r.j.signature;form()}else panel([h('p',{class:'err',text:'Could not check your account. Please refresh.'})])})}
+function load(keep){return api('/api/map').then(function(r){if(r.s!==200){$('mapmsg').textContent='The map could not load. Please refresh.';return}sigs=(r.j.signatures||[]);stats(r.j);renderPins();$('mapmsg').textContent=sigs.length?'Tap a glowing marker to meet an IBJer. Pinch or use + and − to explore.':'The map is ready. The first marker could be yours.';if(keep&&mine&&window.__zoom){/* stay where we are */}})}
+fetch('/world-50m.json').then(function(r){return r.json()}).then(function(t){feats=topojson.feature(t,t.objects.countries).features.filter(function(f){return f.properties&&f.properties.name});drawMap();return load()}).then(account).catch(function(){$('mapmsg').textContent='The map could not load. Please refresh the page.'});
+})();
+</script></body></html>
