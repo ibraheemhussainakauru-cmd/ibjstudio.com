@@ -649,5 +649,5 @@ if(!/^p-/.test(h)&&h!=='n-market')window.__ibjFrom='';
 if(/^p-/.test(h)&&window.__ibjFrom==='market'){var bk=document.getElementById('pback');if(bk){bk.href='#n-market';bk.textContent='Back to Marketplace'}}}
 addEventListener('hashchange',route);route()})();
 </script>
-<script>(function(){var MIN=25;try{fetch("/api/stats").then(function(r){return r.ok?r.json():null}).then(function(j){if(!j||!(j.ibjers>=MIN))return;var b=document.getElementById("ibjstats");b.querySelector("[data-k=ibjers]").textContent=Number(j.ibjers).toLocaleString("en-US");b.querySelector("[data-k=countries]").textContent=Number(j.countries).toLocaleString("en-US");b.hidden=false}).catch(function(){})}catch(e){}})()</script>
+<script>(function(){var MIN=0;try{fetch("/api/stats").then(function(r){return r.ok?r.json():null}).then(function(j){if(!j||!(j.ibjers>=MIN))return;var b=document.getElementById("ibjstats");b.querySelector("[data-k=ibjers]").textContent=Number(j.ibjers).toLocaleString("en-US");b.querySelector("[data-k=countries]").textContent=Number(j.countries).toLocaleString("en-US");b.hidden=false}).catch(function(){})}catch(e){}})()</script>
 </body></html>
